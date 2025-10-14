@@ -13,7 +13,7 @@ templates = Jinja2Templates(directory="templates")
 # --- Mapping FSD ke file txt & PDF ---
 FSD_MAPPING = {
     "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
-        "txt": r"Txt/436109344_requirements3 (1).md",
+        "txt": r"Txt/436109344_requirements3.md",
         "pdf": r"Pdf/SD1-A0001 - Custom Contract and Custom Order Unit in Purchase Order with Contract-140825-162547.pdf"
     },
     "B0141 - Auto Delete Reservation enhancement for SAP system": {
@@ -33,7 +33,7 @@ FSD_MAPPING = {
         "pdf": r"Pdf/D0091.pdf"
     },
     "E0067 - (LM) POD (Proof Of Delivery) DELMAN to SAP S4": {
-        "txt": r"Txt/445579749_requirements3 (1).md",
+        "txt": r"Txt/445579749_requirements3.md",
         "pdf": r"Pdf/SD1-E0067- (LM) POD (Proof Of Delivery) DELMAN to SAP S4-140825-162433.pdf"
     },
     "E0187 - Delivery Optimization Master": {
