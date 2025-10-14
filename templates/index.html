@@ -3,82 +3,129 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FSD Chatbot 💬</title>
+<title>FSD Assistant 💬</title>
 <style>
+/* === Base === */
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f6fa;
   margin: 0;
-  padding: 0;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: #f8f9fa;
+  color: #222;
+  height: 100vh;
+  display: flex;
 }
-.chat-container {
-  max-width: 700px;
-  margin: 40px auto;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-.chat-box {
-  height: 480px;
-  overflow-y: auto;
+
+/* === Sidebar === */
+.sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
 }
-.message {
-  margin: 10px 0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  line-height: 1.4;
-  max-width: 80%;
-}
-.user {
-  background: #0078ff;
-  color: white;
-  margin-left: auto;
-}
-.bot {
-  background: #e9ecef;
+
+.sidebar h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  font-weight: 600;
   color: #333;
-  margin-right: auto;
 }
-.input-area {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  padding: 15px;
-  background: #f1f1f1;
-  border-top: 1px solid #ddd;
-  gap: 10px;
-}
-input[type="text"], select {
-  flex: 1;
+
+.sidebar select {
+  width: 100%;
   padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  outline: none;
-}
-textarea {
-  flex: 1;
-  resize: vertical;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
   font-size: 15px;
-  line-height: 1.5;
-  min-height: 70px;
-  max-height: 200px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fafafa;
   outline: none;
 }
 
+.sidebar hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+/* === Main Chat Area === */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Chat area */
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  padding: 30px;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  max-width: 80%;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.user {
+  align-self: flex-end;
+  background: #0078ff;
+  color: white;
+}
+
+.bot {
+  align-self: flex-start;
+  background: #e9ecef;
+  color: #222;
+}
+
+/* Input area */
+.input-area {
+  display: flex;
+  align-items: flex-end;
+  padding: 20px 30px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+}
+
+textarea {
+  flex: 1;
+  resize: none;
+  padding: 12px 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  outline: none;
+  min-height: 80px;
+  max-height: 200px;
+  transition: all 0.2s;
+}
+
+textarea:focus {
+  border-color: #0078ff;
+  background: #fff;
+}
+
 button {
+  margin-left: 10px;
   padding: 12px 20px;
   background: #0078ff;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 15px;
-  align-self: center;
 }
 
 button:hover {
@@ -87,53 +134,85 @@ button:hover {
 </style>
 </head>
 <body>
-    <div class="chat-container">
-    <div class="chat-box" id="chatBox">
-        <div class="message bot">👋 Hi! I’m your FSD assistant. Select a file and ask me anything.</div>
-    </div>
-    <div class="input-area">
-    <select id="fsdSelect">
-        <option value="C0177">C0177</option>
-        <option value="C0338">C0338</option>
-        <option value="D0091">D0091</option>
-    </select>
-    <textarea id="userInput" placeholder="Describe your requirements or ask about FSD..." rows="4"></textarea>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>📂 Select FSD</h2>
+  <select id="fsdSelect">
+    <option value="C0177">C0177</option>
+    <option value="C0338">C0338</option>
+    <option value="D0091">D0091</option>
+  </select>
+  <hr>
+  <p style="font-size: 13px; color: #555;">
+    Choose an example FSD file to guide your query.  
+    Then describe your requirement or question on the right.
+  </p>
+</div>
+
+<!-- Main Chat -->
+<div class="main">
+  <div class="chat-box" id="chatBox">
+    <div class="message bot">👋 Hi! I’m your FSD assistant. Select a file on the left and describe your requirement below.</div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="userInput" placeholder="Describe your requirement or ask about the selected FSD..."></textarea>
     <button onclick="sendMessage()">Send</button>
-    </div>
+  </div>
 </div>
 
 <script>
+const chatBox = document.getElementById("chatBox");
+const input = document.getElementById("userInput");
+
 async function sendMessage() {
-  const input = document.getElementById("userInput");
   const fsdCode = document.getElementById("fsdSelect").value;
   const message = input.value.trim();
   if (!message) return;
 
-  const chatBox = document.getElementById("chatBox");
+  // Display user message
   chatBox.innerHTML += `<div class="message user">${message}</div>`;
   input.value = "";
   chatBox.scrollTop = chatBox.scrollHeight;
 
+  // Show typing indicator
+  chatBox.innerHTML += `<div class="message bot" id="typing">⏳ Thinking...</div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // Prepare data
   const formData = new FormData();
   formData.append("fsd_code", fsdCode);
   formData.append("question", message);
 
-  chatBox.innerHTML += `<div class="message bot">⏳ Thinking...</div>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
+  // Send request
+  try {
+    const res = await fetch("/ask", { method: "POST", body: formData });
+    const data = await res.json();
 
-  const res = await fetch("/ask", { method: "POST", body: formData });
-  const data = await res.json();
+    document.getElementById("typing").remove();
 
-  // remove "Thinking..."
-  chatBox.removeChild(chatBox.lastElementChild);
-
-  if (data.response) {
-    chatBox.innerHTML += `<div class="message bot">${data.response}</div>`;
-  } else {
-    chatBox.innerHTML += `<div class="message bot">⚠️ Error processing your question.</div>`;
+    if (data.response) {
+      chatBox.innerHTML += `<div class="message bot">${data.response}</div>`;
+    } else {
+      chatBox.innerHTML += `<div class="message bot">⚠️ I couldn’t process your question.</div>`;
+    }
+  } catch (e) {
+    document.getElementById("typing").remove();
+    chatBox.innerHTML += `<div class="message bot">❌ Network error.</div>`;
   }
+
   chatBox.scrollTop = chatBox.scrollHeight;
 }
+
+// Allow Enter + Shift for newline
+input.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
 </script>
+
 </body>
 </html>
