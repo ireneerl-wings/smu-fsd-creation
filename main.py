@@ -11,7 +11,8 @@ app = FastAPI(title="FSD Chatbot API", version="1.1")
 templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
-FSD_MAPPING = {
+FSD_MAPPING = # --- Mapping FSD ke file txt & PDF ---
+{
     "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
         "txt": r"Txt/436109344_requirements3 (1).md",
         "pdf": r"Pdf/SD1-A0001 - Custom Contract and Custom Order Unit in Purchase Order with Contract-140825-162547.pdf"
@@ -35,8 +36,17 @@ FSD_MAPPING = {
     "E0067 - (LM) POD (Proof Of Delivery) DELMAN to SAP S4": {
         "txt": r"Txt/445579749_requirements3 (1).md",
         "pdf": r"Pdf/SD1-E0067- (LM) POD (Proof Of Delivery) DELMAN to SAP S4-140825-162433.pdf"
+    },
+    "E0187 - Delivery Optimization Master": {
+        "txt": r"Txt/567182258_requirements.md",
+        "pdf": None
+    },
+    "E0424 - Delivery Optimization Master WGO": {
+        "txt": r"Txt/407634084_requirements.md",
+        "pdf": None
     }
 }
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
