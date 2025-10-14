@@ -1,127 +1,193 @@
+import os
 import re
-import json 
-import logging 
-import uuid 
-from datetime import date, datetime, timedelta, timezone
-import boto3
-import os 
+import json
+import uuid
+import logging
+import requests
+from fastapi import FastAPI, Form, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 
+# ------------------------------------------------------------------------------
 # Load environment variables
+# ------------------------------------------------------------------------------
 load_dotenv()
-print("Region:", os.getenv("AWS_REGION"))
+print("Region:", os.getenv("AWS_REGION", "not set"))
 
-from fsd_agent import FSDAgentInvoker
-
+# ------------------------------------------------------------------------------
+# Logging setup
+# ------------------------------------------------------------------------------
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# Initialize agents
-fsd_agent = FSDAgentInvoker()
+# ------------------------------------------------------------------------------
+# FastAPI setup
+# ------------------------------------------------------------------------------
+app = FastAPI(title="FSD Chatbot API", version="1.0")
 
-# Initialize Memory Store and Session Management
-SESSION_FILE = "session.json"
+# Allow CORS for all origins (you can restrict later)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# Ambil ID sesi, atau buat ID baru kalau belum ada.
-def get_session_id():
-    if os.path.exists(SESSION_FILE): #jika file session.json ada:
-        with open(SESSION_FILE, "r") as file: #buka file 
-            session_data = json.load(file) #baca isinya pakae .load
-            return session_data.get("session_id") #ambil nilai dari key "session_id" dan return sbgai session ID
-    else: #kalau tidak ada
-        new_session_id = str(uuid.uuid4()) # Bikin ID baru pakai uuid.uuid4() (ID unik acak).
-        with open(SESSION_FILE, "w") as file: #write file 
-            json.dump({"session_id": new_session_id}, file)# session_id itu key dari dictionary
-        return new_session_id
+# ------------------------------------------------------------------------------
+# Folders (relative paths in your repo)
+# ------------------------------------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PDF_DIR = os.path.join(BASE_DIR, "Pdf")
+TXT_DIR = os.path.join(BASE_DIR, "Txt")
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
-# menghapus session yang tersimpan (reset session)
+# Mount static folders if needed
+if os.path.exists(PDF_DIR):
+    app.mount("/pdf", StaticFiles(directory=PDF_DIR), name="pdf")
+if os.path.exists(TEMPLATE_DIR):
+    templates = Jinja2Templates(directory=TEMPLATE_DIR)
+
+# ------------------------------------------------------------------------------
+# Session management
+# ------------------------------------------------------------------------------
+SESSION_FILE = os.path.join(BASE_DIR, "session.json")
+
+
+def get_session_id() -> str:
+    """Retrieve or create a unique session ID."""
+    if os.path.exists(SESSION_FILE):
+        with open(SESSION_FILE, "r") as file:
+            session_data = json.load(file)
+            return session_data.get("session_id")
+    new_session_id = str(uuid.uuid4())
+    with open(SESSION_FILE, "w") as file:
+        json.dump({"session_id": new_session_id}, file)
+    return new_session_id
+
+
 def clear_session():
-    if os.path.exists(SESSION_FILE): # Kalau file session.json ada → hapus file itu (os.remove).
+    """Delete stored session (reset memory)."""
+    if os.path.exists(SESSION_FILE):
         os.remove(SESSION_FILE)
-    logging.info("🔄 Memory cleared. Starting a new session...")
+        logging.info("🔄 Memory cleared. Starting a new session...")
 
+# ------------------------------------------------------------------------------
+# External APIs (update with your own endpoints)
+# ------------------------------------------------------------------------------
+AGENT_API_URL = "https://pgj3gxzlv8.execute-api.us-west-2.amazonaws.com/dev"
+LANGUAGE_API_URL = "https://0oofy8xdqi.execute-api.us-west-2.amazonaws.com/staging"
 
-def invoke_bedrock_language(user_query: str):
-    bedrock_client = boto3.client( 
-        "bedrock-runtime", 
-        region_name=os.getenv("AWS_REGION"), #dari load_dotenv
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
-    )
-
-    prompt = f"""
-        You are an AI assistant tasked with detecting the language of the following user message.
-        Avaiable language are ['english', 'indonesia', 'other']. Default 'english' if not detected and 'other'.
-        Please respond with just the name of the detected language choosen from 3 avaiable language.
-        Question: {user_query}
-    """
+# ------------------------------------------------------------------------------
+# Language Detection Helper
+# ------------------------------------------------------------------------------
+def invoke_language_api(user_query: str) -> str:
+    """Detect language via API Gateway."""
     payload = {
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 200, 
-        "top_k": 250, 
-        "stop_sequences": [],
-        "temperature": 0,
-        "top_p": 0.999,
-        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
-    }
-
-    try:
-        response = bedrock_client.invoke_model(
-            modelId="anthropic.claude-3-haiku-20240307-v1:0",
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps(payload),
+        "prompt": (
+            "You are an AI assistant tasked with detecting the language "
+            "of the following user message. Available languages are "
+            "['english', 'indonesia', 'other']. Default to 'english' if "
+            "undetected. Respond with only the name of the detected language.\n\n"
+            f"Question: {user_query}"
         )
-        result = json.loads(response["body"].read().decode("utf-8")) 
-        logging.info(f"Result Bedrock Language Model:")
-        logging.info(f"{result}")
-
-        if (
-            "content" in result 
-            and isinstance(result["content"], list)
-            and result["content"]
-        ):
-            for content_item in result["content"]:
-                if content_item.get("type") == "text": 
-                    return content_item["text"] 
-
+    }
+    try:
+        response = requests.post(LANGUAGE_API_URL, json=payload, timeout=60)
+        result = response.json()
+        language = result.get("response", "english").strip().lower()
+        if language not in ["english", "indonesia", "other"]:
+            language = "english"
+        logging.info(f"🌐 Language detected: {language}")
+        return language
     except Exception as e:
-        return f"An error occurred: {e}"
+        logging.error(f"❌ Language detection error: {e}")
+        return "english"
 
-
-def process_streamlit(user_query: str, session_id: str = None, file_path: str = None):
+# ------------------------------------------------------------------------------
+# Main Processing Logic
+# ------------------------------------------------------------------------------
+def process_fsd_query(user_query: str, session_id: str = None, file_path: str = None):
+    """Main FSD chatbot processing logic."""
     if not session_id:
         session_id = get_session_id()
     if not user_query:
-        logging.error("No message received.")
         return "Message is required"
-    
-    # utc7 = timezone(timedelta(hours=7))
-    # timestamp = datetime.now(utc7).strftime("%Y%m%d")
-    # session_id = timestamp 
-    
-    memory_id = session_id
-    logging.info(f"🟢 Incoming User Query: {user_query}")
 
+    memory_id = session_id
+    logging.info(f"🟢 Incoming user query: {user_query}")
+
+    # Read file content if provided
     file_text = ""
     if file_path and os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as f:
-            file_text = f.read()
-    else:
-        logging.warning(f"⚠️ File path tidak ditemukan: {file_path}")
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                file_text = f.read()
+        except Exception as e:
+            logging.warning(f"⚠️ Unable to read file: {file_path} ({e})")
+
+    # Detect language
+    language = invoke_language_api(user_query)
+
+    # Build payload for Agent API
+    structured_prompt = f"[{language.upper()}]\n\n{user_query}\n\n{file_text}"
+    payload = {
+        "session_id": session_id,
+        "prompt": structured_prompt,
+        "memory_id": memory_id,
+    }
+
+    try:
+        response = requests.post(AGENT_API_URL, json=payload, timeout=120)
+        result = response.json()
+        logging.info(f"🤖 Agent API Response: {result}")
+        return result.get("response", "Sorry, I don't understand that topic.")
+    except Exception as e:
+        logging.error(f"❌ Agent invocation error: {e}")
+        return f"Error calling agent API: {e}"
+
+# ------------------------------------------------------------------------------
+# Routes
+# ------------------------------------------------------------------------------
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    """Render index.html (optional homepage)"""
+    if os.path.exists(os.path.join(TEMPLATE_DIR, "index.html")):
+        return templates.TemplateResponse("index.html", {"request": None})
+    return {"message": "FSD Chatbot API is running 🚀"}
+
+@app.post("/ask_fsd")
+async def ask_fsd(user_query: str = Form(...), file: UploadFile = File(None)):
+    """
+    Main endpoint for frontend form submission.
+    Accepts user_query (text) and optional file upload.
+    """
+    session_id = get_session_id()
+    file_path = None
+
+    if file:
+        file_path = os.path.join("/tmp", file.filename)
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+
+    result = process_fsd_query(user_query, session_id=session_id, file_path=file_path)
+    return {"session_id": session_id, "response": result}
 
 
-    #mendeteksi bahasa dari pesan yang dikirim
-    language = invoke_bedrock_language(user_query)
-    if language not in ["english", "indonesia"]:
-        language = "english" 
-    logging.info(f"🌐 Language Detected: {language}")
-    
-    final_result = fsd_agent.format_response(user_query, file_text, language, session_id, memory_id)
-    logging.info(f"🤖 Agent Response: {final_result}")
+@app.get("/health")
+def health_check():
+    """Health endpoint for AWS App Runner monitoring."""
+    return {"status": "ok", "region": os.getenv("AWS_REGION", "unknown")}
 
-        
-    return final_result if final_result else "Sorry, I don't understand that topic."
-
-
+# ------------------------------------------------------------------------------
+# Local Dev Entry Point
+# ------------------------------------------------------------------------------
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
