@@ -11,19 +11,32 @@ app = FastAPI(title="FSD Chatbot API", version="1.1")
 templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
+# --- Mapping FSD ke file txt & PDF ---
 FSD_MAPPING = {
-    "C0177": {
+    "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
+        "txt": r"Txt/436109344_requirements3 (1).md",
+        "pdf": r"Pdf/SD1-A0001 - Custom Contract and Custom Order Unit in Purchase Order with Contract-140825-162547.pdf"
+    },
+    "B0141 - Auto Delete Reservation enhancement for SAP system": {
+        "txt": r"Txt/413008086_requirements3.md",
+        "pdf": r"Pdf/SD1-B0141 - Auto Delete Reservation-140825-161854.pdf"
+    },
+    "C0177 - Weighing Machine at BS for GI & GR based on CO PRO - Connect to Weighing Machine from Fiori - SAP S/4": {
         "txt": r"Txt/434077697_requirements3.md",
         "pdf": r"Pdf/C0177.pdf"
     },
-    "C0338": {
+    "C0338 - OUT I/F to provide detail stock in Storage Bin - SAP S/4": {
         "txt": r"Txt/466681857_requirements3.md",
         "pdf": r"Pdf/C0338.pdf"
     },
-    "D0091": {
+    "D0091 - Inbound interface from satellite Apps to create SO - SFA - API - SAP S/4": {
         "txt": r"Txt/484147232_requirements3.md",
         "pdf": r"Pdf/D0091.pdf"
     },
+    "E0067 - (LM) POD (Proof Of Delivery) DELMAN to SAP S4": {
+        "txt": r"Txt/445579749_requirements3 (1).md",
+        "pdf": r"Pdf/SD1-E0067- (LM) POD (Proof Of Delivery) DELMAN to SAP S4-140825-162433.pdf"
+    }
 }
 
 @app.get("/", response_class=HTMLResponse)
