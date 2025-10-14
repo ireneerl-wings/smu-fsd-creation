@@ -1,21 +1,17 @@
-from fastapi import FastAPI, UploadFile, Form
-from fastapi.responses import JSONResponse
-import uvicorn
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import app as backend
 import os
 
-app = FastAPI(title="FSD Chatbot API", version="1.0")
+app = FastAPI(title="FSD Chatbot API", version="1.1")
+
+# Setup Jinja2 template folder
+templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
 FSD_MAPPING = {
-    "A0001": {
-        "txt": r"Txt/436109344_requirements3 (1).md",
-        "pdf": r"Pdf/SD1-A0001 - Custom Contract and Custom Order Unit in Purchase Order with Contract-140825-162547.pdf"
-    },
-    "B0141": {
-        "txt": r"Txt/413008086_requirements3.md",
-        "pdf": r"Pdf/SD1-B0141 - Auto Delete Reservation-140825-161854.pdf"
-    },
     "C0177": {
         "txt": r"Txt/434077697_requirements3.md",
         "pdf": r"Pdf/C0177.pdf"
@@ -28,26 +24,14 @@ FSD_MAPPING = {
         "txt": r"Txt/484147232_requirements3.md",
         "pdf": r"Pdf/D0091.pdf"
     },
-    "E0067": {
-        "txt": r"Txt/445579749_requirements3 (1).md",
-        "pdf": r"Pdf/SD1-E0067- (LM) POD (Proof Of Delivery) DELMAN to SAP S4-140825-162433.pdf"
-    }
 }
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to FSD Chatbot API 🚀"}
-
-@app.get("/fsd-list")
-async def list_fsd():
-    """Return list of available FSD keys"""
-    return {"available_fsd": list(FSD_MAPPING.keys())}
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/ask")
-async def ask_fsd(
-    fsd_code: str = Form(...),
-    question: str = Form(...)
-):
+async def ask_fsd(fsd_code: str = Form(...), question: str = Form(...)):
     """Process user query for a selected FSD"""
     if fsd_code not in FSD_MAPPING:
         return JSONResponse(status_code=404, content={"error": "Invalid FSD code"})
@@ -60,9 +44,10 @@ async def ask_fsd(
         file_path=txt_path
     )
 
-    return {"fsd_code": fsd_code, "question": question, "response": response}
+    return {"response": response}
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
+    import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=port)
