@@ -11,7 +11,6 @@ app = FastAPI(title="FSD Chatbot API", version="1.1")
 templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
-# --- Mapping FSD ke file txt & PDF ---
 FSD_MAPPING = {
     "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
         "txt": r"Txt/436109344_requirements3 (1).md",
@@ -77,7 +76,7 @@ async def ask_fsd(fsd_code: str = Form(...), question: str = Form(...)):
 
     txt_path = FSD_MAPPING[fsd_code]["txt"]
 
-    response = backend.process_streamlit(
+    response = backend.process_fsd_query(
         user_query=question,
         session_id=backend.get_session_id(),
         file_path=txt_path
