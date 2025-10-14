@@ -28,9 +28,9 @@ logging.basicConfig(
 # ------------------------------------------------------------------------------
 # FastAPI setup
 # ------------------------------------------------------------------------------
-app = FastAPI(title="FSD Chatbot API", version="1.0")
+app = FastAPI(title="FSD Chatbot API", version="1.2")
 
-# Allow CORS for all origins (you can restrict later)
+# Allow Streamlit front-end to talk to backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -40,51 +40,41 @@ app.add_middleware(
 )
 
 # ------------------------------------------------------------------------------
-# Folders (relative paths in your repo)
+# Directory setup
 # ------------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PDF_DIR = os.path.join(BASE_DIR, "Pdf")
 TXT_DIR = os.path.join(BASE_DIR, "Txt")
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 
-# Mount static folders if needed
 if os.path.exists(PDF_DIR):
     app.mount("/pdf", StaticFiles(directory=PDF_DIR), name="pdf")
-if os.path.exists(TEMPLATE_DIR):
-    templates = Jinja2Templates(directory=TEMPLATE_DIR)
+
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 # ------------------------------------------------------------------------------
 # Session management
 # ------------------------------------------------------------------------------
 SESSION_FILE = os.path.join(BASE_DIR, "session.json")
 
-
 def get_session_id() -> str:
-    """Retrieve or create a unique session ID."""
     if os.path.exists(SESSION_FILE):
-        with open(SESSION_FILE, "r") as file:
-            session_data = json.load(file)
+        with open(SESSION_FILE, "r") as f:
+            session_data = json.load(f)
             return session_data.get("session_id")
     new_session_id = str(uuid.uuid4())
-    with open(SESSION_FILE, "w") as file:
-        json.dump({"session_id": new_session_id}, file)
+    with open(SESSION_FILE, "w") as f:
+        json.dump({"session_id": new_session_id}, f)
     return new_session_id
 
-
-def clear_session():
-    """Delete stored session (reset memory)."""
-    if os.path.exists(SESSION_FILE):
-        os.remove(SESSION_FILE)
-        logging.info("🔄 Memory cleared. Starting a new session...")
-
 # ------------------------------------------------------------------------------
-# External APIs (update with your own endpoints)
+# External APIs
 # ------------------------------------------------------------------------------
 AGENT_API_URL = "https://pgj3gxzlv8.execute-api.us-west-2.amazonaws.com/dev"
 LANGUAGE_API_URL = "https://0oofy8xdqi.execute-api.us-west-2.amazonaws.com/staging"
 
 # ------------------------------------------------------------------------------
-# Language Detection Helper
+# Utility functions
 # ------------------------------------------------------------------------------
 def invoke_language_api(user_query: str) -> str:
     """Detect language via API Gateway."""
@@ -98,95 +88,113 @@ def invoke_language_api(user_query: str) -> str:
         )
     }
     try:
-        response = requests.post(LANGUAGE_API_URL, json=payload, timeout=60)
+        response = requests.post(LANGUAGE_API_URL, json=payload, timeout=20)
         result = response.json()
         language = result.get("response", "english").strip().lower()
         if language not in ["english", "indonesia", "other"]:
             language = "english"
-        logging.info(f"🌐 Language detected: {language}")
         return language
     except Exception as e:
         logging.error(f"❌ Language detection error: {e}")
         return "english"
 
+def chunk_text(text, max_length=4000):
+    """Split long text into smaller pieces."""
+    sentences = re.split(r'(?<=[.!?]) +', text)
+    chunks, current = [], ""
+    for s in sentences:
+        if len(current) + len(s) < max_length:
+            current += s + " "
+        else:
+            chunks.append(current.strip())
+            current = s + " "
+    if current:
+        chunks.append(current.strip())
+    return chunks
+
+def is_small_talk(query: str) -> bool:
+    """Detect if message is small-talk and not FSD-related."""
+    small_talk = [
+        "hi", "hello", "hey", "good morning", "good evening",
+        "thanks", "thank you", "how are you", "yo", "hola"
+    ]
+    q = query.lower().strip()
+    return any(q.startswith(st) or q == st for st in small_talk)
+
 # ------------------------------------------------------------------------------
-# Main Processing Logic
+# Main logic
 # ------------------------------------------------------------------------------
-def process_fsd_query(user_query: str, session_id: str = None, file_path: str = None):
-    """Main FSD chatbot processing logic."""
+def process_fsd_query(user_query: str, session_id=None, file_path=None):
     if not session_id:
         session_id = get_session_id()
     if not user_query:
         return "Message is required"
 
-    memory_id = session_id
-    logging.info(f"🟢 Incoming user query: {user_query}")
+    # Small talk? respond locally
+    if is_small_talk(user_query):
+        return "👋 Hi there! I’m your FSD assistant. Select a file on the left and describe your requirement below."
 
-    # Read file content if provided
+    language = invoke_language_api(user_query)
+    logging.info(f"🌐 Language detected: {language}")
+
+    # Read file text
     file_text = ""
     if file_path and os.path.exists(file_path):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 file_text = f.read()
         except Exception as e:
-            logging.warning(f"⚠️ Unable to read file: {file_path} ({e})")
+            logging.warning(f"⚠️ Unable to read file: {e}")
 
-    # Detect language
-    language = invoke_language_api(user_query)
+    # Split large text into chunks to prevent timeout
+    chunks = chunk_text(file_text)
+    responses = []
 
-    # Build payload for Agent API
-    structured_prompt = f"[{language.upper()}]\n\n{user_query}\n\n{file_text}"
-    payload = {
-        "session_id": session_id,
-        "prompt": structured_prompt,
-        "memory_id": memory_id,
-    }
+    for idx, chunk in enumerate(chunks or [""], 1):
+        structured_prompt = f"[Part {idx}/{len(chunks)}][{language.upper()}]\n\nUser Query: {user_query}\n\nContext:\n{chunk}"
+        payload = {
+            "session_id": session_id,
+            "prompt": structured_prompt,
+            "memory_id": session_id,
+        }
+        try:
+            resp = requests.post(AGENT_API_URL, json=payload, timeout=60)
+            result = resp.json()
+            responses.append(result.get("response", ""))
+        except Exception as e:
+            logging.error(f"❌ Agent error (chunk {idx}): {e}")
+            responses.append(f"(Chunk {idx} failed to process.)")
 
-    try:
-        response = requests.post(AGENT_API_URL, json=payload, timeout=290)
-        result = response.json()
-        logging.info(f"🤖 Agent API Response: {result}")
-        return result.get("response", "Sorry, I don't understand that topic.")
-    except Exception as e:
-        logging.error(f"❌ Agent invocation error: {e}")
-        return f"Error calling agent API: {e}"
+    return "\n\n".join(responses).strip()
 
 # ------------------------------------------------------------------------------
 # Routes
 # ------------------------------------------------------------------------------
-
 @app.get("/", response_class=HTMLResponse)
 def home():
-    """Render index.html (optional homepage)"""
+    """Render your template if exists."""
     if os.path.exists(os.path.join(TEMPLATE_DIR, "index.html")):
         return templates.TemplateResponse("index.html", {"request": None})
     return {"message": "FSD Chatbot API is running 🚀"}
 
 @app.post("/ask_fsd")
 async def ask_fsd(user_query: str = Form(...), file: UploadFile = File(None)):
-    """
-    Main endpoint for frontend form submission.
-    Accepts user_query (text) and optional file upload.
-    """
     session_id = get_session_id()
     file_path = None
-
     if file:
         file_path = os.path.join("/tmp", file.filename)
         with open(file_path, "wb") as f:
             f.write(await file.read())
 
-    result = process_fsd_query(user_query, session_id=session_id, file_path=file_path)
+    result = process_fsd_query(user_query, session_id, file_path)
     return {"session_id": session_id, "response": result}
-
 
 @app.get("/health")
 def health_check():
-    """Health endpoint for AWS App Runner monitoring."""
     return {"status": "ok", "region": os.getenv("AWS_REGION", "unknown")}
 
 # ------------------------------------------------------------------------------
-# Local Dev Entry Point
+# Local test entry
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
     import uvicorn
