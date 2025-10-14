@@ -11,8 +11,7 @@ app = FastAPI(title="FSD Chatbot API", version="1.1")
 templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
-FSD_MAPPING = # --- Mapping FSD ke file txt & PDF ---
-{
+FSD_MAPPING = {
     "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
         "txt": r"Txt/436109344_requirements3 (1).md",
         "pdf": r"Pdf/SD1-A0001 - Custom Contract and Custom Order Unit in Purchase Order with Contract-140825-162547.pdf"
