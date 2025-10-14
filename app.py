@@ -143,7 +143,7 @@ def process_fsd_query(user_query: str, session_id: str = None, file_path: str = 
     }
 
     try:
-        response = requests.post(AGENT_API_URL, json=payload, timeout=120)
+        response = requests.post(AGENT_API_URL, json=payload, timeout=290)
         result = response.json()
         logging.info(f"🤖 Agent API Response: {result}")
         return result.get("response", "Sorry, I don't understand that topic.")
