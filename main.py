@@ -11,6 +11,7 @@ app = FastAPI(title="FSD Chatbot API", version="1.1")
 templates = Jinja2Templates(directory="templates")
 
 # --- Mapping FSD ke file txt & PDF ---
+# --- Mapping FSD ke file txt & PDF ---
 FSD_MAPPING = {
     "A0001 - Enhancement for Custom Contract and Custom Order Unit in Purchase Order with Contract": {
         "txt": r"Txt/436109344_requirements3 (1).md",
@@ -43,8 +44,25 @@ FSD_MAPPING = {
     "E0424 - Delivery Optimization Master WGO": {
         "txt": r"Txt/407634084_requirements.md",
         "pdf": None
+    },
+    "C0168 - Difference List & Posting for Cycle Count - SAP S/4": {
+        "txt": r"Txt/434110468_requirements.md",
+        "pdf": None,
+    },
+    "C0169 - Difference List & Posting for Periodic Count - SAP S/4": {
+        "txt": r"Txt/434077714_requirements.md",
+        "pdf": None,
+    },
+    "Z0003 - Automation on Material Master status change - cost is released (NPD Not Launched and Active Status)": {
+        "txt": r"Txt/469599062_requirements.md",
+        "pdf": None,
+    },
+    "Z0004 - Automation on Material Master status change - NPD Launched - SAP S/4": {
+        "txt": r"Txt/600375455_requirements.md",
+        "pdf": None,
     }
 }
+
 
 
 @app.get("/", response_class=HTMLResponse)
