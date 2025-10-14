@@ -43,9 +43,12 @@ body {
 }
 .input-area {
   display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   padding: 15px;
   background: #f1f1f1;
   border-top: 1px solid #ddd;
+  gap: 10px;
 }
 input[type="text"], select {
   flex: 1;
@@ -54,34 +57,49 @@ input[type="text"], select {
   border: 1px solid #ccc;
   outline: none;
 }
+textarea {
+  flex: 1;
+  resize: vertical;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 70px;
+  max-height: 200px;
+  outline: none;
+}
+
 button {
-  margin-left: 10px;
-  padding: 10px 20px;
+  padding: 12px 20px;
   background: #0078ff;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 15px;
+  align-self: center;
 }
+
 button:hover {
   background: #005dc1;
 }
 </style>
 </head>
 <body>
-<div class="chat-container">
-  <div class="chat-box" id="chatBox">
-    <div class="message bot">👋 Hi! I’m your FSD assistant. Select a file and ask me anything.</div>
-  </div>
-  <div class="input-area">
+    <div class="chat-container">
+    <div class="chat-box" id="chatBox">
+        <div class="message bot">👋 Hi! I’m your FSD assistant. Select a file and ask me anything.</div>
+    </div>
+    <div class="input-area">
     <select id="fsdSelect">
-      <option value="C0177">C0177</option>
-      <option value="C0338">C0338</option>
-      <option value="D0091">D0091</option>
+        <option value="C0177">C0177</option>
+        <option value="C0338">C0338</option>
+        <option value="D0091">D0091</option>
     </select>
-    <input type="text" id="userInput" placeholder="Type your question...">
+    <textarea id="userInput" placeholder="Describe your requirements or ask about FSD..." rows="4"></textarea>
     <button onclick="sendMessage()">Send</button>
-  </div>
+    </div>
 </div>
 
 <script>
