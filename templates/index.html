@@ -319,7 +319,7 @@ async function sendMessage() {
     document.getElementById("typing").remove();
 
     if (data.response) {
-        const parsed = marked.parse(data.response);
+        const parsed = marked.parse(data.response.replace(/\n\s*\n/g, '\n'));
         chatBox.innerHTML += `<div class="message bot">${parsed}</div>`;
     } else {
         chatBox.innerHTML += `<div class="message bot">⚠️ I couldn’t process your question.</div>`;
