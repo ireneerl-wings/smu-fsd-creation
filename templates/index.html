@@ -76,6 +76,16 @@ body {
   word-wrap: break-word;
 }
 
+.message.bot p {
+  margin: 0 0 4px 0; /* reduce bottom margin */
+  line-height: 1.4;
+}
+.message.bot ul, 
+.message.bot ol {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
 .message.bot table {
   border-collapse: collapse;
   width: 100%;
@@ -97,7 +107,6 @@ body {
 .message.bot tr:nth-child(even) {
   background: #fafafa;
 }
-
 
 .user {
   align-self: flex-end;
