@@ -82,7 +82,10 @@ async def ask_fsd(fsd_code: str = Form(...), question: str = Form(...)):
         file_path=txt_path
     )
 
-    return {"response": response}
+    if not response:
+        return JSONResponse(content={"response": "⚠️ No response generated for this query."})
+
+    return JSONResponse(content={"response": response})
 
 
 if __name__ == "__main__":
