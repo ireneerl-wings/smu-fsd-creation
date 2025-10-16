@@ -52,6 +52,18 @@ FSD_MAPPING = {
         "txt": r"Txt/434077714_requirements.md",
         "pdf": None,
     },
+    "C0331 - OUT I/F Reservation - Summary - SAP S/4": {
+        "txt": r"Txt/440631298_requirements.md",
+        "pdf": None,
+    },
+    "C0332 - OUT I/F Reservation - Item Level - SAP S/4": {
+        "txt": r"Txt/440598530_requirements.md",
+        "pdf": None,
+    },
+    "C0333 - OUT I/F Reservation - Warehouse Task - SAP S/4": {
+        "txt": r"Txt/440696833_requirements.md",
+        "pdf": None,
+    },
     "Z0003 - Automation on Material Master status change - cost is released (NPD Not Launched and Active Status)": {
         "txt": r"Txt/469599062_requirements.md",
         "pdf": None,
