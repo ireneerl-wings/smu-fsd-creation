@@ -20,11 +20,11 @@ FSD_MAPPING = {
         "txt": r"Txt/413008086_requirements3.md",
         "pdf": r"Pdf/SD1-B0141 - Auto Delete Reservation-140825-161854.pdf"
     },
-    " B0148 - Outbound Interface Blueyonder Transmode - SAP S/4": {
+    "B0148 - Outbound Interface Blueyonder Transmode - SAP S/4": {
         "txt": r"Txt/537461636_requirements.md",
         "pdf": r"Pdf/SD1-B0141 - Auto Delete Reservation-140825-161854.pdf"
     },
-    " B0149 - Outbound Interface Blueyonder Transmode - SAP S/4": {
+    "B0149 - Outbound Interface Blueyonder Transmode - SAP S/4": {
         "txt": r"Txt/540410096_requirements.md",
         "pdf": r"Pdf/SD1-B0141 - Auto Delete Reservation-140825-161854.pdf"
     },
