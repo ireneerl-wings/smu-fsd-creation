@@ -40,6 +40,10 @@ FSD_MAPPING = {
         "txt": r"Txt/484147232_requirements3.md",
         "pdf": r"Pdf/D0091.pdf"
     },
+    "D0169- Threshold Master Data -  SAP S/4": {
+        "txt": r"Txt/432963585_requirements.md",
+        "pdf": r"Pdf/D0091.pdf"
+    },
     "E0067 - (LM) POD (Proof Of Delivery) DELMAN to SAP S4": {
         "txt": r"Txt/445579749_requirements3.md",
         "pdf": r"Pdf/SD1-E0067- (LM) POD (Proof Of Delivery) DELMAN to SAP S4-140825-162433.pdf"
